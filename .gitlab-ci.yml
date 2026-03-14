@@ -1,0 +1,52 @@
+stages:
+  - build
+  - test
+  - deploy
+
+image: node:18-alpine
+
+# ────────────────────────────────────────────
+# STAGE 1 — Build du projet React
+# ────────────────────────────────────────────
+build job:
+  stage: build
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - echo " Installation des dépendances..."
+    - npm install --force
+    - echo " Build de l'application React..."
+    - npm run build
+    - mkdir -p artifact
+    - mv build/* artifact/
+  artifacts:
+    paths:
+      - artifact/
+
+# ────────────────────────────────────────────
+# STAGE 2 — Tests unitaires
+# ────────────────────────────────────────────
+unit test job:
+  stage: test
+  timeout: 15m
+  script:
+    - echo " Installation des dépendances pour les tests..."
+    - npm install --force
+    - echo " Lancement des tests..."
+    - npm test -- --watchAll=false --passWithNoTests
+  allow_failure: true
+
+# ────────────────────────────────────────────
+# STAGE 3 — Build & Push image Docker (manuel)
+# ────────────────────────────────────────────
+deploy job:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t $DOCKER_HUB_USER/todo-front:latest .
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_TOKEN
+    - docker push $DOCKER_HUB_USER/todo-front:latest
+  when: manual
