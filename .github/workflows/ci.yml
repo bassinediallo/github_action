@@ -1,0 +1,105 @@
+name: Build and Deploy Image
+
+on: [push]
+#on:
+#  push:
+#    branches: [ main ]
+#    paths-ignore:
+#      - '**/README.md'
+
+jobs:
+  # Job 1 — Build du projet React
+  build:
+    name: Build job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --force
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Create directory for uploading artifacts
+        run: mkdir staging && cp -r build/* staging
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-final
+          path: staging
+          if-no-files-found: error
+          retention-days: 5
+
+      - name: Show uploaded artifacts
+        run: ls staging/
+
+      - run: echo "This job's status is ${{ job.status }}."
+
+  # Job 2 — Tests unitaires
+  check-tests:
+    name: Test job
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --force
+
+      - name: Run unit tests
+        run: npm test -- --watchAll=false --passWithNoTests
+        continue-on-error: true
+
+      - run: echo "This job's status is ${{ job.status }}."
+
+  # Job 3 — Build image Docker et push sur Docker Hub
+  deploy:
+    name: Deploy job
+    needs: [build, check-tests]
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout pour récupérer le Dockerfile
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Récupérer l'artifact du job build
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: package-final
+
+      - name: Show downloaded artifacts directory
+        run: pwd && ls .
+
+      # Build et push de l'image Docker
+      - name: Build Docker image
+        run: docker build --no-cache -t ${{ secrets.DOCKER_HUB_USER }}/todo-front:latest .
+
+      - name: Show Docker images
+        run: docker image ls
+
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_HUB_USER }} -p ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Push image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_HUB_USER }}/todo-front:latest
+
+      - run: echo "This job's status is ${{ job.status }}."
