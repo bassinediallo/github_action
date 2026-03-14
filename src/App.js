@@ -29,7 +29,7 @@ function App() {
   const toggleTache = (tache) => {
     fetch(`${API}/${tache.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "Application/json" },
       body: JSON.stringify({ ...tache, terminee: !tache.terminee })
     })
         .then(res => res.json())
@@ -42,7 +42,7 @@ function App() {
   };
 
   return (
-      <div style={{ maxWidth: "600px", margin: "40px auto", fontFamily: "Arial" }}>
+      <div style={{ maxWidth: "601px", margin: "40px auto", fontFamily: "Arial" }}>
         <h1>📝 Todo App</h1>
         <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
           <input
