@@ -14,6 +14,7 @@
 - [Variables d'environnement](#variables-denvironnement)
 - [Lancer le projet en local](#lancer-le-projet-en-local)
 - [Différence CI vs CD](#différence-ci-vs-cd)
+- [Différence GitLab CI vs GitHub Actions](#différence-gitlab-ci-vs-github-actions)
 - [Auteur](#auteur)
 
 ---
@@ -57,7 +58,68 @@ todo-front/
 └── README.md                # Documentation du projet
 ```
 
+---
 
+## Étapes de mise en place
+
+### Étape 1 — Créer un token Docker Hub
+
+Avant de configurer GitHub, il faut créer un token d'accès sur Docker Hub avec les permissions **Read & Write** pour permettre à GitHub Actions de pusher les images.
+
+- Va sur [hub.docker.com](https://hub.docker.com)
+- **Account Settings** → **Personal access tokens** → **Generate new token**
+- Nom : `github-actions`, Permissions : **Read & Write**
+- Copie le token généré
+
+---
+
+### Étape 2 — Initialiser le dépôt Git et faire le premier commit
+
+Initialisation du dépôt Git local, ajout de tous les fichiers et création du premier commit incluant le fichier `.github/workflows/ci.yml`.
+
+```bash
+git init
+git add .
+git commit -m "Initial commit + GitHub Actions"
+```
+
+---
+
+### Étape 3 — Lier le dépôt GitHub et pusher
+
+Configuration du remote GitHub puis push du code sur la branche `main`.
+
+```bash
+git remote add origin https://github.com/bassinediallo/github_action.git
+git push -u origin main
+```
+
+![git push réussi](captures/Capture2.PNG)
+
+---
+
+### Étape 4 — Ajouter les secrets dans GitHub
+
+Les secrets `DOCKER_HUB_USER` et `DOCKER_HUB_TOKEN` sont ajoutés dans **Settings → Secrets and variables → Actions → New repository secret**.
+
+```
+DOCKER_HUB_USER  = bassine20
+DOCKER_HUB_TOKEN = ton_token_docker_hub
+```
+
+**Vue des secrets configurés :**
+
+![Secrets configurés](captures/Capture.PNG)
+
+---
+
+### Étape 5 — Pipeline CI/CD exécutée avec succès
+
+La pipeline se déclenche automatiquement à chaque push. Les 3 jobs s'enchaînent et passent au vert en **1m 51s**.
+
+![Vue du workflow et détail des jobs](captures/Capture1.PNG)
+
+---
 
 ## Pipeline CI/CD
 
@@ -85,7 +147,7 @@ push → [Build job] → [Test job] → [Deploy job]
 - Download de l'artifact généré par le job build
 - Build de l'image Docker via le `Dockerfile`
 - Connexion à Docker Hub avec les secrets sécurisés
-- Push de l'image : `DOCKER_HUB_USER/todo-front:latest`
+- Push de l'image : `bassine20/todo-front:latest`
 
 ### Fichier `.github/workflows/ci.yml`
 
@@ -195,60 +257,10 @@ CMD ["nginx", "-g", "daemon off;"]
 
 Les secrets sont stockés dans **Settings → Secrets and variables → Actions** du repo GitHub.
 
-| Secret | Description |
-|--------|-------------|
-| `DOCKER_HUB_USER` | Pseudo Docker Hub |
-| `DOCKER_HUB_TOKEN` | Token d'accès Docker Hub (Read & Write) |
-
----
-
-### Ajouter les secrets dans GitHub
-
-Les secrets `DOCKER_HUB_USER` et `DOCKER_HUB_TOKEN` sont ajoutés dans **Settings → Secrets and variables → Actions → New repository secret**.
-
-
-**Vue des secrets configurés :**
-
-![Secrets configurés](captures/variables.png)
-
----
-### Initialiser le dépôt Git et faire le premier commit
-
-Initialisation du dépôt Git local, ajout de tous les fichiers du projet.
-
-![git init et git add](captures/git1.png)
-
----
-
-### Commit du projet avec le fichier GitHub Actions
-
-Création du commit incluant le fichier `.github/workflows/ci.yml`.
-
-![git commit](captures/git2.png)
-
----
-
-### Lier le dépôt GitHub et pusher
-
-Configuration du remote GitHub puis push du code sur la branche `main`.
-
-![git remote set-url et git push](captures/git3.png)
-
----
-
-### Pipeline exécutée avec succès
-
-La pipeline se déclenche automatiquement à chaque push. Les 3 jobs s'enchaînent et passent au vert en **1m 43s**.
-
-![Vue du workflow](captures/workflow.png)
-
----
-
-### Détail des jobs
-
-Chaque job s'exécute dans l'ordre : `Build job` → `Test job` → `Deploy job`.
-
-![Détail des jobs](captures/job.png)
+| Secret | Description | Visibilité |
+|--------|-------------|------------|
+| `DOCKER_HUB_USER` | Pseudo Docker Hub (`bassine20`) | Chiffré |
+| `DOCKER_HUB_TOKEN` | Token d'accès Docker Hub (Read & Write) | Chiffré |
 
 ---
 
@@ -256,7 +268,7 @@ Chaque job s'exécute dans l'ordre : `Build job` → `Test job` → `Deploy job`
 
 ```bash
 # Cloner le projet
-git clone https://github.com/marie-badji/github_action.git
+git clone https://github.com/bassinediallo/github_action.git
 cd github_action
 
 # Installer les dépendances
@@ -293,10 +305,12 @@ docker run -p 80:80 todo-front
 | Syntaxe | `stages`, `script:` | `jobs`, `steps:` |
 | Secrets | Variables CI/CD | Secrets Actions |
 | Deploy | `when: manual` | Automatique après les jobs précédents |
+| Runner | Shared runners GitLab | `ubuntu-latest` GitHub |
 
 ---
 
 ## Auteur
 
-**Marie BADJI** — M2GL DevOps  
-Dépôt GitHub : [github.com/marie-badji/github_action](https://github.com/marie-badji/github_action)
+**Bassine Diallo** — M2GL DevOps  
+Dépôt GitHub : [github.com/bassinediallo/github_action](https://github.com/bassinediallo/github_action)  
+Image Docker Hub : [hub.docker.com/r/bassine20/todo-front](https://hub.docker.com/r/bassine20/todo-front)
